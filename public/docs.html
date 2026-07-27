@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documentation — UTEXO MCP</title>
+  <meta name="description" content="Documentation for the UTEXO MCP server: endpoint, transport, one-click setup for Claude, Cursor and VS Code, full tool reference and self-hosting guide." />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23f7931a'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='%23120a02' font-family='Arial' font-weight='bold'%3EU%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/"><span class="dot"></span> UTEXO&nbsp;MCP</a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="#tools">Tool reference</a>
+        <a href="#selfhost">Self-host</a>
+        <a href="https://github.com/UTEXO-Protocol" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="doc-body">
+      <aside class="toc">
+        <strong>Documentation</strong>
+        <a href="#overview">Overview</a>
+        <a href="#endpoint">Endpoint &amp; transport</a>
+        <a href="#claude">Add to Claude</a>
+        <a href="#cursor">Add to Cursor</a>
+        <a href="#vscode">Add to VS Code</a>
+        <a href="#desktop">Claude Desktop (stdio)</a>
+        <a href="#other">Other clients</a>
+        <a href="#tools">Tool reference</a>
+        <a href="#selfhost">Self-hosting</a>
+        <a href="#privacy">Privacy &amp; limits</a>
+      </aside>
+
+      <article class="doc-content">
+        <h2 id="overview">Overview</h2>
+        <p>
+          <b>UTEXO MCP</b> is a hosted <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model
+          Context Protocol</a> server. It gives any MCP-capable AI client a set of read-only Bitcoin
+          tools and offline Bitcoin/RGB utilities, plus a curated overview of the
+          <a href="https://github.com/UTEXO-Protocol" target="_blank" rel="noopener">UTEXO Protocol</a>.
+        </p>
+        <p>
+          The server requires <b>no API keys and holds no secrets</b>. Every tool is either a read-only
+          query against public Bitcoin data or a pure, offline computation. It cannot move funds, sign
+          anything, or access your wallet.
+        </p>
+
+        <h2 id="endpoint">Endpoint &amp; transport</h2>
+        <table>
+          <tr><th>Endpoint</th><td><span class="inline">https://mcp.gogettest.online/mcp</span></td></tr>
+          <tr><th>Transport</th><td>Streamable HTTP (MCP), stateless — one request per call</td></tr>
+          <tr><th>Method</th><td><span class="inline">POST</span> (JSON-RPC 2.0 body)</td></tr>
+          <tr><th>Auth</th><td>None</td></tr>
+          <tr><th>Health check</th><td><span class="inline">GET /health</span> → <span class="inline">{"status":"ok"}</span></td></tr>
+          <tr><th>Descriptor</th><td><span class="inline">GET /info</span> → server name, version and tool list</td></tr>
+        </table>
+        <div class="callout">
+          Native remote-MCP clients (e.g. Claude's custom connectors) connect straight to the URL.
+          Clients that only speak stdio can bridge to it with <span class="inline">mcp-remote</span> — see below.
+        </div>
+
+        <h2 id="claude">Add to Claude</h2>
+        <p>Claude (Pro, Team or Enterprise) supports remote MCP servers as <b>custom connectors</b>:</p>
+        <ol>
+          <li>Open <b>Settings → Connectors</b>.</li>
+          <li>Click <b>Add custom connector</b>.</li>
+          <li>Name it <span class="inline">UTEXO</span> and paste the URL <span class="inline">https://mcp.gogettest.online/mcp</span>.</li>
+          <li>Save. Start a new chat — the UTEXO tools are now available and Claude will call them when relevant.</li>
+        </ol>
+        <p>Try it with a prompt like: <em>"What are the current Bitcoin fees, and how many confirmations does transaction &lt;txid&gt; have?"</em></p>
+
+        <h2 id="cursor">Add to Cursor</h2>
+        <p>Click the button below (or in <b>Settings → MCP → Add new MCP server</b>, choose an HTTP server and paste the URL):</p>
+        <p><a class="btn primary" href="cursor://anysphere.cursor-deeplink/mcp/install?name=utexo&config=eyJ1cmwiOiAiaHR0cHM6Ly9tY3AuZ29nZXR0ZXN0Lm9ubGluZS9tY3AifQ==">▸ Add to Cursor</a></p>
+        <p>Equivalent manual entry in <span class="inline">~/.cursor/mcp.json</span>:</p>
+        <pre><code>{
+  "mcpServers": {
+    "utexo": { "url": "https://mcp.gogettest.online/mcp" }
+  }
+}</code></pre>
+
+        <h2 id="vscode">Add to VS Code</h2>
+        <p>VS Code (1.101+) supports MCP servers with GitHub Copilot agent mode:</p>
+        <p><a class="btn primary" href="vscode:mcp/install?%7B%22name%22%3A%20%22utexo%22%2C%20%22url%22%3A%20%22https%3A%2F%2Fmcp.gogettest.online%2Fmcp%22%7D">▸ Add to VS&nbsp;Code</a></p>
+        <p>Or add to your <span class="inline">.vscode/mcp.json</span> (workspace) / user settings:</p>
+        <pre><code>{
+  "servers": {
+    "utexo": { "type": "http", "url": "https://mcp.gogettest.online/mcp" }
+  }
+}</code></pre>
+
+        <h2 id="desktop">Claude Desktop &amp; other stdio clients</h2>
+        <p>
+          Clients that only support local stdio servers can reach the hosted endpoint through the
+          <a href="https://www.npmjs.com/package/mcp-remote" target="_blank" rel="noopener">mcp-remote</a>
+          bridge (requires Node.js). Add this to <span class="inline">claude_desktop_config.json</span> and restart:
+        </p>
+        <pre><code>{
+  "mcpServers": {
+    "utexo": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.gogettest.online/mcp"]
+    }
+  }
+}</code></pre>
+
+        <h2 id="other">Other clients &amp; quick test</h2>
+        <p>Any MCP client that speaks Streamable HTTP works. To smoke-test from a terminal:</p>
+        <pre><code># List available tools
+curl -s https://mcp.gogettest.online/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
+        <p>Inspect interactively with the official <a href="https://github.com/modelcontextprotocol/inspector" target="_blank" rel="noopener">MCP Inspector</a> pointed at the endpoint URL.</p>
+
+        <h2 id="tools">Tool reference</h2>
+
+        <h3>utexo_project_info</h3>
+        <p>Returns a concise, curated overview of the UTEXO Protocol and its building blocks. No parameters.</p>
+
+        <h3>bitcoin_network_status</h3>
+        <p>Current chain tip height, recommended fee rates (sat/vB) and a mempool summary. No parameters.</p>
+
+        <h3>bitcoin_fee_estimates</h3>
+        <p>Recommended fee rates in sat/vByte for fastest, half-hour, hour, economy and minimum targets. No parameters.</p>
+
+        <h3>bitcoin_address</h3>
+        <table>
+          <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+          <tr><td>address</td><td>string</td><td>A Bitcoin address (legacy, P2SH, bech32 or taproot).</td></tr>
+        </table>
+        <p>Returns confirmed + mempool balance (sats and BTC) and transaction counts.</p>
+
+        <h3>bitcoin_transaction</h3>
+        <table>
+          <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+          <tr><td>txid</td><td>string (64 hex)</td><td>The transaction id.</td></tr>
+        </table>
+        <p>Returns confirmation status, confirmation count, block height, fee, size/weight and input/output counts.</p>
+
+        <h3>bitcoin_block</h3>
+        <table>
+          <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+          <tr><td>height</td><td>integer (optional)</td><td>Block height.</td></tr>
+          <tr><td>hash</td><td>string (optional)</td><td>Block hash (64 hex). Provide exactly one of height or hash.</td></tr>
+        </table>
+        <p>Returns header details: hash, height, timestamp, tx count, merkle root, difficulty, bits, nonce, previous hash.</p>
+
+        <h3>verify_merkle_proof</h3>
+        <table>
+          <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+          <tr><td>txid</td><td>string (64 hex)</td><td>Transaction id, display (big-endian) order.</td></tr>
+          <tr><td>position</td><td>integer</td><td>Transaction index within the block.</td></tr>
+          <tr><td>merklePath</td><td>string[]</td><td>Sibling hashes leaf→root, display order. Empty for single-tx blocks.</td></tr>
+          <tr><td>merkleRoot</td><td>string (64 hex)</td><td>Block merkle root, display order.</td></tr>
+        </table>
+        <p>
+          Reconstructs the merkle root from the proof and reports whether the transaction is included.
+          Runs fully offline. It enforces the "all index bits consumed" rule (Bitcoin Core's
+          <span class="inline">CPartialMerkleTree</span> invariant) so a proof cannot validate at a
+          fabricated position.
+        </p>
+
+        <h2 id="selfhost">Self-hosting</h2>
+        <p>The server is a small Node.js app (MIT licensed). To run your own instance:</p>
+        <pre><code>git clone https://github.com/Alicepoltora/utexo-mcp.git
+cd utexo-mcp
+npm install
+PORT=8791 npm start
+# MCP endpoint: http://127.0.0.1:8791/mcp</code></pre>
+        <p>
+          Configuration via environment variables: <span class="inline">PORT</span> (default 8791),
+          <span class="inline">HOST</span> (default 127.0.0.1), and
+          <span class="inline">BITCOIN_API_BASE</span> (default <span class="inline">https://mempool.space/api</span> —
+          point it at your own mempool/esplora instance if you prefer). Put it behind a TLS reverse
+          proxy for public use.
+        </p>
+
+        <h2 id="privacy">Privacy &amp; limits</h2>
+        <ul>
+          <li><b>No secrets.</b> The server stores nothing and requires no credentials.</li>
+          <li><b>Read-only.</b> It cannot sign transactions, move funds or touch a wallet.</li>
+          <li><b>Third-party data.</b> Bitcoin queries are proxied to a public mempool.space-compatible API; those requests are subject to that provider's availability and rate limits.</li>
+          <li><b>Best-effort availability.</b> Provided as-is under the MIT license, with no warranty.</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap">
+      <div>UTEXO MCP · open-source (MIT) · built on the Model Context Protocol</div>
+      <div><a href="/">Home</a> · <a href="/health">Status</a> · <a href="https://github.com/UTEXO-Protocol" target="_blank" rel="noopener">UTEXO on GitHub</a></div>
+    </div>
+  </footer>
+</body>
+</html>

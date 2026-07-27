@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UTEXO MCP — Bitcoin & RGB tools for your AI</title>
+  <meta name="description" content="A hosted Model Context Protocol (MCP) server exposing secret-free Bitcoin and RGB tools. Add it to Claude, Cursor or VS Code in one click." />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23f7931a'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='%23120a02' font-family='Arial' font-weight='bold'%3EU%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/"><span class="dot"></span> UTEXO&nbsp;MCP</a>
+      <nav>
+        <a href="#connect">Connect</a>
+        <a href="#tools">Tools</a>
+        <a href="/docs">Docs</a>
+        <a href="https://github.com/UTEXO-Protocol" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" style="border-top:none">
+      <div class="wrap">
+        <span class="badge">● Model Context Protocol · Streamable HTTP</span>
+        <h1>Give your AI <span class="grad">Bitcoin&nbsp;&amp;&nbsp;RGB</span> superpowers</h1>
+        <p class="sub">
+          UTEXO MCP is a hosted Model Context Protocol server. Connect it to Claude, Cursor or VS Code
+          and let your assistant read live Bitcoin data, verify SPV proofs and explore the UTEXO
+          protocol — no API keys, no secrets, nothing to install.
+        </p>
+        <div class="btn-row">
+          <a class="btn primary" href="#connect">➕ Add to Claude</a>
+          <a class="btn ghost" href="/docs">Read the docs</a>
+        </div>
+
+        <div class="connect" id="connect">
+          <h3>MCP endpoint URL</h3>
+          <div class="url-box">
+            <code id="mcpUrl">https://mcp.gogettest.online/mcp</code>
+            <button onclick="copyUrl()">Copy</button>
+          </div>
+          <p class="hint">
+            Paste this URL into your client's "Add custom connector / MCP server" field, or use a
+            one-click button below.
+          </p>
+          <div class="btn-row" style="justify-content:flex-start; margin-top:14px">
+            <a class="btn" href="cursor://anysphere.cursor-deeplink/mcp/install?name=utexo&config=eyJ1cmwiOiAiaHR0cHM6Ly9tY3AuZ29nZXR0ZXN0Lm9ubGluZS9tY3AifQ==">▸ Add to Cursor</a>
+            <a class="btn" href="vscode:mcp/install?%7B%22name%22%3A%20%22utexo%22%2C%20%22url%22%3A%20%22https%3A%2F%2Fmcp.gogettest.online%2Fmcp%22%7D">▸ Add to VS&nbsp;Code</a>
+            <a class="btn" href="/docs#claude">▸ Claude setup guide</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <div class="wrap">
+        <h2>Add it in one minute</h2>
+        <p class="lead">Any MCP-capable client works. Here's the fastest path for the popular ones.</p>
+        <div class="steps">
+          <div class="step">
+            <span class="n">1</span>
+            <h4>Claude (Pro/Team/Enterprise)</h4>
+            <p>Settings → Connectors → <b>Add custom connector</b>. Paste the endpoint URL above and save. The tools appear in your next chat.</p>
+          </div>
+          <div class="step">
+            <span class="n">2</span>
+            <h4>Cursor / VS Code</h4>
+            <p>Click <b>Add to Cursor</b> or <b>Add to VS&nbsp;Code</b> above — the deep link pre-fills everything. Approve the connector and you're done.</p>
+          </div>
+          <div class="step">
+            <span class="n">3</span>
+            <h4>Claude Desktop / stdio clients</h4>
+            <p>Use the <span class="inline">mcp-remote</span> bridge — a ready-to-paste config is in the <a href="/docs#claude">docs</a>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tools">
+      <div class="wrap">
+        <h2>Tools included</h2>
+        <p class="lead">All read-only or fully offline. The server never asks for keys, seeds or signatures.</p>
+        <div class="tools">
+          <div class="tool"><div class="name">utexo_project_info</div><p>Curated overview of the UTEXO Protocol and its building blocks (RGB, Lightning, the EVM bridge, the Nitro enclave signer, the WDK).</p></div>
+          <div class="tool"><div class="name">bitcoin_network_status</div><p>Current chain tip height, recommended fee rates and a mempool summary.</p></div>
+          <div class="tool"><div class="name">bitcoin_fee_estimates</div><p>Recommended sat/vByte fee rates for several confirmation targets.</p></div>
+          <div class="tool"><div class="name">bitcoin_address</div><p>Confirmed + mempool balance (sats and BTC) and transaction counts for any address.</p></div>
+          <div class="tool"><div class="name">bitcoin_transaction</div><p>Confirmation status, confirmations, fee, size/weight and I/O counts for a txid.</p></div>
+          <div class="tool"><div class="name">bitcoin_block</div><p>Header details by block height or hash: time, tx count, merkle root, difficulty and more.</p></div>
+          <div class="tool"><div class="name">verify_merkle_proof</div><p>Offline Bitcoin SPV Merkle inclusion-proof verification, with position-binding hardening.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="quick">
+      <div class="wrap">
+        <h2>Prefer JSON config?</h2>
+        <p class="lead">For Claude Desktop and other stdio-only clients, add this to your config and restart the app.</p>
+        <pre><code>{
+  "mcpServers": {
+    "utexo": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.gogettest.online/mcp"]
+    }
+  }
+}</code></pre>
+        <p class="lead" style="margin-top:14px">
+          Native remote-MCP clients can skip <span class="inline">mcp-remote</span> and use the URL directly.
+          Full details are in the <a href="/docs">documentation</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div>UTEXO MCP · open-source (MIT) · built on the Model Context Protocol</div>
+      <div>
+        <a href="/docs">Docs</a> ·
+        <a href="/health">Status</a> ·
+        <a href="https://github.com/UTEXO-Protocol" target="_blank" rel="noopener">UTEXO on GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast">Copied to clipboard</div>
+
+  <script>
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(function () { t.classList.remove('show'); }, 1600);
+    }
+    function copyUrl() {
+      var url = document.getElementById('mcpUrl').textContent.trim();
+      navigator.clipboard.writeText(url).then(function () { toast('Endpoint URL copied'); },
+        function () { toast('Copy failed — select and copy manually'); });
+    }
+  </script>
+</body>
+</html>
