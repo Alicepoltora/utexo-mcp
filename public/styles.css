@@ -73,7 +73,7 @@ header.nav {
   transition: transform .06s ease, border-color .2s ease;
 }
 .chip:hover { transform: translateY(-1px); border-color: #35405a; }
-.chip .ico { width: 15px; height: 15px; display: inline-block; }
+.chip .ico { width: 16px; height: 16px; display: inline-block; vertical-align: -3px; flex: 0 0 auto; }
 .chip.detected { border-color: var(--accent); background: #1c1710; color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
 .chip .you { font-size: 11px; color: var(--good); font-weight: 700; }
 

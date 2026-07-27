@@ -6,7 +6,12 @@
   <title>UTEXO MCP — Bitcoin & RGB tools for your AI</title>
   <meta name="description" content="A hosted Model Context Protocol (MCP) server exposing secret-free Bitcoin and RGB tools. Add it to Claude, Cursor or VS Code in one click." />
   <link rel="stylesheet" href="/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23f7931a'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='%23120a02' font-family='Arial' font-weight='bold'%3EU%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+  <meta property="og:title" content="UTEXO MCP — Bitcoin & RGB tools for your AI" />
+  <meta property="og:description" content="Add secret-free Bitcoin & RGB tools to Claude, Cursor or VS Code in one click." />
+  <meta property="og:image" content="/icon-512.png" />
 </head>
 <body>
   <header class="nav">
@@ -39,10 +44,10 @@
 
         <div class="client-chips" id="heroChips">
           <span class="chips-label" id="chipsLabel">Jump to your client:</span>
-          <button class="chip" data-c="claude"  onclick="openClient('claude')">Claude</button>
-          <button class="chip" data-c="cursor"  onclick="openClient('cursor')">Cursor</button>
-          <button class="chip" data-c="vscode"  onclick="openClient('vscode')">VS&nbsp;Code</button>
-          <button class="chip" data-c="desktop" onclick="openClient('desktop')">Claude&nbsp;Desktop</button>
+          <button class="chip" data-c="claude" onclick="openClient('claude')"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10z"/></svg>Claude</button>
+          <button class="chip" data-c="cursor" onclick="openClient('cursor')"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3l14 7-6 2-2 6z"/></svg>Cursor</button>
+          <button class="chip" data-c="vscode" onclick="openClient('vscode')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="8 7 3 12 8 17"/><polyline points="16 7 21 12 16 17"/></svg>VS&nbsp;Code</button>
+          <button class="chip" data-c="desktop" onclick="openClient('desktop')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>Claude&nbsp;Desktop</button>
         </div>
 
         <div class="connect" id="connect">
@@ -163,6 +168,7 @@
       setTimeout(function () { t.classList.remove('show'); }, 1600);
     }
     function copyUrl() {
+      track('copy_url');
       var url = document.getElementById('mcpUrl').textContent.trim();
       navigator.clipboard.writeText(url).then(function () { toast('Endpoint URL copied'); },
         function () { toast('Copy failed — select and copy manually'); });
@@ -218,7 +224,20 @@
     }
     var CLIENT_NICE = { claude: 'Claude', cursor: 'Cursor', vscode: 'VS Code', desktop: 'Claude Desktop', other: 'your client' };
 
+    // Privacy-light analytics: fire-and-forget aggregate event, no PII.
+    function track(event) {
+      try {
+        var body = JSON.stringify({ event: event });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/track', new Blob([body], { type: 'application/json' }));
+        } else {
+          fetch('/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true });
+        }
+      } catch (e) {}
+    }
+
     function openClient(id) {
+      track('open_' + id);
       var target = document.getElementById('connect');
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       selectClient(id);
@@ -234,6 +253,7 @@
         '<pre><code id="' + id + '">' + text.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</code></pre></div>';
     }
     function copyBlock(id) {
+      track(id === 'cfgCurl' ? 'copy_curl' : 'copy_config');
       var el = document.getElementById(id);
       if (!el) return;
       navigator.clipboard.writeText(el.innerText).then(function () { toast('Copied'); },
@@ -259,7 +279,7 @@
         render: function () {
           return '<h4>Cursor</h4>' +
             '<p class="desc">One click installs it via a deep link, or add it to your MCP config manually.</p>' +
-            '<div class="actions" style="margin-bottom:12px"><a class="btn primary" href="' + CURSOR_LINK + '">▸ Add to Cursor</a></div>' +
+            '<div class="actions" style="margin-bottom:12px"><a class="btn primary" href="' + CURSOR_LINK + '" onclick="track(\'deeplink_cursor\')">▸ Add to Cursor</a></div>' +
             '<p class="path">Manual: <b>~/.cursor/mcp.json</b></p>' +
             codeBlock('cfgCursor', CURSOR_CFG);
         }
@@ -269,7 +289,7 @@
         render: function () {
           return '<h4>VS Code (Copilot agent)</h4>' +
             '<p class="desc">VS Code 1.101+ supports MCP servers in agent mode.</p>' +
-            '<div class="actions" style="margin-bottom:12px"><a class="btn primary" href="' + VSCODE_LINK + '">▸ Add to VS&nbsp;Code</a></div>' +
+            '<div class="actions" style="margin-bottom:12px"><a class="btn primary" href="' + VSCODE_LINK + '" onclick="track(\'deeplink_vscode\')">▸ Add to VS&nbsp;Code</a></div>' +
             '<p class="path">Manual: <b>.vscode/mcp.json</b> (workspace) or user settings</p>' +
             codeBlock('cfgVscode', VSCODE_CFG);
         }
@@ -349,6 +369,7 @@
         if (!v) { out.textContent = 'Please enter a ' + ARG_TOOLS[tool].key + '.'; return; }
         args[ARG_TOOLS[tool].key] = v;
       }
+      track('run_tool');
       btn.disabled = true; out.textContent = 'Running ' + tool + '…';
       try {
         var res = await fetch('/mcp', {
