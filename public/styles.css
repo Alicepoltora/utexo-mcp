@@ -75,6 +75,33 @@ header.nav {
 .url-box button:hover { background: #1d2536; }
 .connect .hint { color: var(--muted); font-size: 14px; margin: 14px 0 0; }
 
+/* Client selector */
+.os-note { font-size: 13px; color: var(--muted); margin: 14px 0 10px; text-align: left; }
+.os-note b { color: var(--text); }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.tab {
+  cursor: pointer; border: 1px solid var(--border); background: var(--bg-soft); color: var(--muted);
+  padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; transition: all .15s ease;
+}
+.tab:hover { color: var(--text); border-color: #35405a; }
+.tab.active { background: #1c1710; color: var(--accent); border-color: #4a3a1a; }
+.tab .rec { font-size: 11px; color: var(--good); margin-left: 6px; }
+.panel { text-align: left; }
+.panel h4 { margin: 0 0 4px; font-size: 16px; }
+.panel .desc { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+.panel ol { margin: 0 0 12px; padding-left: 20px; color: #cdd7e8; font-size: 14.5px; }
+.panel ol li { margin: 4px 0; }
+.panel .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.codewrap { position: relative; }
+.codewrap .copybtn {
+  position: absolute; top: 8px; right: 8px; border: 1px solid var(--border);
+  background: var(--bg-soft); color: var(--text); border-radius: 8px; padding: 4px 10px;
+  font-size: 12.5px; cursor: pointer; font-weight: 600;
+}
+.codewrap .copybtn:hover { background: #1d2536; }
+.codewrap pre { margin: 0; }
+.path { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--muted); margin: 8px 0 0; word-break: break-all; }
+
 /* Sections */
 section { padding: 46px 0; border-top: 1px solid var(--border); }
 section h2 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.01em; }

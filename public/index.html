@@ -43,15 +43,9 @@
             <code id="mcpUrl">https://mcp.gogettest.online/mcp</code>
             <button onclick="copyUrl()">Copy</button>
           </div>
-          <p class="hint">
-            Paste this URL into your client's "Add custom connector / MCP server" field, or use a
-            one-click button below.
-          </p>
-          <div class="btn-row" style="justify-content:flex-start; margin-top:14px">
-            <a class="btn" href="cursor://anysphere.cursor-deeplink/mcp/install?name=utexo&config=eyJ1cmwiOiAiaHR0cHM6Ly9tY3AuZ29nZXR0ZXN0Lm9ubGluZS9tY3AifQ==">▸ Add to Cursor</a>
-            <a class="btn" href="vscode:mcp/install?%7B%22name%22%3A%20%22utexo%22%2C%20%22url%22%3A%20%22https%3A%2F%2Fmcp.gogettest.online%2Fmcp%22%7D">▸ Add to VS&nbsp;Code</a>
-            <a class="btn" href="/docs#claude">▸ Claude setup guide</a>
-          </div>
+          <div class="os-note" id="osNote">Detecting your setup…</div>
+          <div class="tabs" id="clientTabs"></div>
+          <div class="panel" id="clientPanel"></div>
         </div>
       </div>
     </section>
@@ -186,6 +180,125 @@
       }
       try { return JSON.parse(text); } catch (e) { return null; }
     }
+    // ---- Add-to-client selector with OS auto-detection ----
+    var ENDPOINT = 'https://mcp.gogettest.online/mcp';
+    var CURSOR_LINK = 'cursor://anysphere.cursor-deeplink/mcp/install?name=utexo&config=eyJ1cmwiOiAiaHR0cHM6Ly9tY3AuZ29nZXR0ZXN0Lm9ubGluZS9tY3AifQ==';
+    var VSCODE_LINK = 'vscode:mcp/install?%7B%22name%22%3A%20%22utexo%22%2C%20%22url%22%3A%20%22https%3A%2F%2Fmcp.gogettest.online%2Fmcp%22%7D';
+
+    function detectOS() {
+      var d = navigator.userAgentData;
+      var p = ((d && d.platform) || navigator.platform || '') + ' ' + (navigator.userAgent || '');
+      p = p.toLowerCase();
+      if (p.indexOf('win') > -1) return 'windows';
+      if (p.indexOf('mac') > -1 || p.indexOf('iphone') > -1 || p.indexOf('ipad') > -1) return 'macos';
+      if (p.indexOf('linux') > -1 || p.indexOf('android') > -1 || p.indexOf('x11') > -1) return 'linux';
+      return 'unknown';
+    }
+    var OS_LABEL = { macos: 'macOS', windows: 'Windows', linux: 'Linux', unknown: 'your system' };
+    function desktopConfigPath(os) {
+      if (os === 'windows') return '%APPDATA%\\Claude\\claude_desktop_config.json';
+      if (os === 'linux') return '~/.config/Claude/claude_desktop_config.json';
+      return '~/Library/Application Support/Claude/claude_desktop_config.json';
+    }
+    var REMOTE_CFG =
+      '{\n  "mcpServers": {\n    "utexo": {\n      "command": "npx",\n      "args": ["-y", "mcp-remote", "https://mcp.gogettest.online/mcp"]\n    }\n  }\n}';
+    var CURSOR_CFG = '{\n  "mcpServers": {\n    "utexo": { "url": "https://mcp.gogettest.online/mcp" }\n  }\n}';
+    var VSCODE_CFG = '{\n  "servers": {\n    "utexo": { "type": "http", "url": "https://mcp.gogettest.online/mcp" }\n  }\n}';
+
+    function codeBlock(id, text) {
+      return '<div class="codewrap"><button class="copybtn" onclick="copyBlock(\'' + id + '\')">Copy</button>' +
+        '<pre><code id="' + id + '">' + text.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</code></pre></div>';
+    }
+    function copyBlock(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      navigator.clipboard.writeText(el.innerText).then(function () { toast('Copied'); },
+        function () { toast('Copy failed'); });
+    }
+
+    var CLIENTS = {
+      claude: {
+        label: 'Claude', rec: true,
+        render: function () {
+          return '<h4>Claude (web &amp; desktop)</h4>' +
+            '<p class="desc">Add UTEXO as a custom connector. Requires a Pro, Team or Enterprise plan.</p>' +
+            '<ol><li>Open <b>Settings → Connectors</b>.</li>' +
+            '<li>Click <b>Add custom connector</b>.</li>' +
+            '<li>Name it <b>UTEXO</b> and paste the endpoint URL above.</li>' +
+            '<li>Save, then start a new chat — the tools appear automatically.</li></ol>' +
+            '<div class="actions"><button class="btn primary" onclick="copyUrl()">Copy endpoint URL</button>' +
+            '<a class="btn" href="/docs#claude">Full guide</a></div>';
+        }
+      },
+      cursor: {
+        label: 'Cursor',
+        render: function () {
+          return '<h4>Cursor</h4>' +
+            '<p class="desc">One click installs it via a deep link, or add it to your MCP config manually.</p>' +
+            '<div class="actions" style="margin-bottom:12px"><a class="btn primary" href="' + CURSOR_LINK + '">▸ Add to Cursor</a></div>' +
+            '<p class="path">Manual: <b>~/.cursor/mcp.json</b></p>' +
+            codeBlock('cfgCursor', CURSOR_CFG);
+        }
+      },
+      vscode: {
+        label: 'VS Code',
+        render: function () {
+          return '<h4>VS Code (Copilot agent)</h4>' +
+            '<p class="desc">VS Code 1.101+ supports MCP servers in agent mode.</p>' +
+            '<div class="actions" style="margin-bottom:12px"><a class="btn primary" href="' + VSCODE_LINK + '">▸ Add to VS&nbsp;Code</a></div>' +
+            '<p class="path">Manual: <b>.vscode/mcp.json</b> (workspace) or user settings</p>' +
+            codeBlock('cfgVscode', VSCODE_CFG);
+        }
+      },
+      desktop: {
+        label: 'Claude Desktop / stdio',
+        render: function (os) {
+          return '<h4>Claude Desktop &amp; other stdio clients</h4>' +
+            '<p class="desc">Bridge to the hosted endpoint with <span class="inline">mcp-remote</span> (needs Node.js). ' +
+            'Add this to your config and restart the app.</p>' +
+            '<p class="path">Config file on <b>' + OS_LABEL[os] + '</b>: ' + desktopConfigPath(os) + '</p>' +
+            codeBlock('cfgRemote', REMOTE_CFG);
+        }
+      },
+      other: {
+        label: 'Other',
+        render: function () {
+          return '<h4>Any other MCP client</h4>' +
+            '<p class="desc">Point any Streamable-HTTP MCP client at the endpoint URL. Quick terminal test:</p>' +
+            codeBlock('cfgCurl',
+              "curl -s https://mcp.gogettest.online/mcp \\\n" +
+              "  -H 'Content-Type: application/json' \\\n" +
+              "  -H 'Accept: application/json, text/event-stream' \\\n" +
+              '  -d \'{"jsonrpc":"2.0","id":1,"method":"tools/list"}\'') +
+            '<div class="actions" style="margin-top:12px"><a class="btn" href="/docs#other">Client docs</a></div>';
+        }
+      }
+    };
+    var CLIENT_ORDER = ['claude', 'cursor', 'vscode', 'desktop', 'other'];
+    var CURRENT_OS = 'unknown';
+
+    function selectClient(id) {
+      document.querySelectorAll('#clientTabs .tab').forEach(function (t) {
+        t.classList.toggle('active', t.getAttribute('data-c') === id);
+      });
+      document.getElementById('clientPanel').innerHTML = CLIENTS[id].render(CURRENT_OS);
+    }
+    function initConnect() {
+      CURRENT_OS = detectOS();
+      var note = document.getElementById('osNote');
+      if (note) {
+        note.innerHTML = CURRENT_OS === 'unknown'
+          ? 'Pick your client below — one click or copy-paste.'
+          : 'Detected <b>' + OS_LABEL[CURRENT_OS] + '</b>. Pick your client below — instructions are tailored to your setup.';
+      }
+      var tabs = document.getElementById('clientTabs');
+      tabs.innerHTML = CLIENT_ORDER.map(function (id) {
+        return '<div class="tab" data-c="' + id + '" onclick="selectClient(\'' + id + '\')">' +
+          CLIENTS[id].label + (CLIENTS[id].rec ? '<span class="rec">recommended</span>' : '') + '</div>';
+      }).join('');
+      selectClient('claude');
+    }
+
     async function runTool() {
       var tool = document.getElementById('tryTool').value;
       var out = document.getElementById('tryOut');
@@ -213,6 +326,8 @@
         btn.disabled = false;
       }
     }
+
+    initConnect();
   </script>
 </body>
 </html>
