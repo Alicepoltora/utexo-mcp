@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usage stats — UTEXO MCP</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <style>
+    .stat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+    .stat-head .big { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+    .stat-head .big .grad { background: linear-gradient(90deg, var(--accent), #ffcf7a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .meta { color: var(--muted); font-size: 14px; }
+    .bars { margin: 6px 0 8px; }
+    .bar-row { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center; gap: 12px; margin: 9px 0; }
+    .bar-row .lbl { color: var(--text); font-size: 14.5px; }
+    .bar-track { background: var(--code); border: 1px solid var(--border); border-radius: 8px; height: 22px; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, #ffa733, var(--accent)); border-radius: 7px 0 0 7px; min-width: 2px; transition: width .5s ease; }
+    .bar-fill.alt { background: linear-gradient(90deg, #6f9bff, var(--accent-2)); }
+    .bar-row .val { text-align: right; font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 14px; }
+    .empty { color: var(--muted); font-style: italic; padding: 10px 0; }
+    .refresh { margin-left: auto; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/"><span class="dot"></span> UTEXO&nbsp;MCP</a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/docs">Docs</a>
+        <a href="https://github.com/Alicepoltora/utexo-mcp" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding: 40px 20px 70px">
+    <div class="stat-head">
+      <div class="big"><span class="grad" id="total">—</span> events</div>
+      <button class="btn refresh" onclick="load()">↻ Refresh</button>
+    </div>
+    <p class="meta" id="since">Loading…</p>
+
+    <section style="border-top:none; padding:26px 0 0">
+      <h2 style="font-size:22px; margin:0 0 4px">Client connections</h2>
+      <p class="lead" style="margin:0 0 14px">Which client visitors opened when adding the server.</p>
+      <div class="bars" id="clients"></div>
+    </section>
+
+    <section style="padding:26px 0 0">
+      <h2 style="font-size:22px; margin:0 0 4px">Actions</h2>
+      <p class="lead" style="margin:0 0 14px">Deep-link installs, config copies and live tool runs.</p>
+      <div class="bars" id="actions"></div>
+    </section>
+
+    <p class="meta" style="margin-top:26px">
+      Raw JSON: <a href="/stats">/stats</a>. Counts are anonymous and aggregate — no cookies, IPs or user agents.
+    </p>
+  </main>
+
+  <script>
+    var CLIENTS = [
+      ['open_claude', 'Claude'],
+      ['open_cursor', 'Cursor'],
+      ['open_vscode', 'VS Code'],
+      ['open_desktop', 'Claude Desktop'],
+      ['open_other', 'Other']
+    ];
+    var ACTIONS = [
+      ['deeplink_cursor', 'Add to Cursor'],
+      ['deeplink_vscode', 'Add to VS Code'],
+      ['copy_url', 'Copy endpoint URL'],
+      ['copy_config', 'Copy config'],
+      ['copy_curl', 'Copy curl test'],
+      ['run_tool', 'Run tool (Try it)']
+    ];
+
+    function renderBars(containerId, spec, events, alt) {
+      var max = 0;
+      spec.forEach(function (s) { max = Math.max(max, events[s[0]] || 0); });
+      var el = document.getElementById(containerId);
+      if (max === 0) { el.innerHTML = '<div class="empty">No events yet.</div>'; return; }
+      el.innerHTML = spec.map(function (s) {
+        var v = events[s[0]] || 0;
+        var pct = Math.round((v / max) * 100);
+        return '<div class="bar-row"><div class="lbl">' + s[1] + '</div>' +
+          '<div class="bar-track"><div class="bar-fill' + (alt ? ' alt' : '') + '" style="width:' + pct + '%"></div></div>' +
+          '<div class="val">' + v + '</div></div>';
+      }).join('');
+    }
+
+    async function load() {
+      try {
+        var r = await fetch('/stats', { cache: 'no-store' });
+        var d = await r.json();
+        var ev = d.events || {};
+        document.getElementById('total').textContent = (d.total || 0).toLocaleString();
+        var since = d.since ? new Date(d.since) : null;
+        document.getElementById('since').textContent = since
+          ? 'Counting since ' + since.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+          : '';
+        renderBars('clients', CLIENTS, ev, false);
+        renderBars('actions', ACTIONS, ev, true);
+      } catch (e) {
+        document.getElementById('since').textContent = 'Could not load stats: ' + e.message;
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
