@@ -112,4 +112,55 @@ export async function blockInfo({ height, hash }) {
   };
 }
 
+export async function prices() {
+  const p = await api('/v1/prices');
+  return {
+    timestamp: p.time,
+    timeUtc: p.time ? new Date(p.time * 1000).toISOString() : null,
+    currencies: { USD: p.USD, EUR: p.EUR, GBP: p.GBP, JPY: p.JPY, CAD: p.CAD, CHF: p.CHF, AUD: p.AUD },
+    source: BASE,
+  };
+}
+
+// Rough vsize for a native-segwit (P2WPKH) transaction, in vBytes.
+function estimateVsize(inputs, outputs) {
+  const overhead = 10.5;
+  return Math.ceil(overhead + inputs * 68 + outputs * 31);
+}
+
+const PRIORITIES = {
+  fastest: 'fastestFee',
+  halfHour: 'halfHourFee',
+  hour: 'hourFee',
+  economy: 'economyFee',
+  minimum: 'minimumFee',
+};
+
+export async function estimateTransactionFee({ vbytes, inputs, outputs, priority = 'halfHour' }) {
+  const key = PRIORITIES[priority];
+  if (!key) throw new Error(`priority must be one of: ${Object.keys(PRIORITIES).join(', ')}`);
+  let vsize = vbytes;
+  let estimated = false;
+  if (vsize == null) {
+    if (inputs == null || outputs == null) {
+      throw new Error('provide either vbytes, or both inputs and outputs (to estimate vsize)');
+    }
+    vsize = estimateVsize(Number(inputs), Number(outputs));
+    estimated = true;
+  }
+  const fees = await recommendedFees();
+  const rate = fees[key];
+  const feeSats = Math.ceil(vsize * rate);
+  return {
+    priority,
+    feeRateSatVb: rate,
+    vbytes: vsize,
+    vbytesEstimated: estimated,
+    feeSats,
+    feeBtc: satsToBtc(feeSats),
+    allRatesSatVb: fees,
+    source: BASE,
+  };
+}
+
 export const apiBase = BASE;

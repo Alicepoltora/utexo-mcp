@@ -15,6 +15,7 @@
       <nav>
         <a href="#connect">Connect</a>
         <a href="#tools">Tools</a>
+        <a href="#try">Try&nbsp;it</a>
         <a href="/docs">Docs</a>
         <a href="https://github.com/UTEXO-Protocol" target="_blank" rel="noopener">GitHub</a>
       </nav>
@@ -87,10 +88,35 @@
           <div class="tool"><div class="name">utexo_project_info</div><p>Curated overview of the UTEXO Protocol and its building blocks (RGB, Lightning, the EVM bridge, the Nitro enclave signer, the WDK).</p></div>
           <div class="tool"><div class="name">bitcoin_network_status</div><p>Current chain tip height, recommended fee rates and a mempool summary.</p></div>
           <div class="tool"><div class="name">bitcoin_fee_estimates</div><p>Recommended sat/vByte fee rates for several confirmation targets.</p></div>
+          <div class="tool"><div class="name">bitcoin_price</div><p>Current BTC spot price in major fiat currencies (USD, EUR, GBP, JPY and more).</p></div>
+          <div class="tool"><div class="name">estimate_transaction_fee</div><p>Estimate a transaction fee from its vsize (or input/output counts) at live fee rates.</p></div>
           <div class="tool"><div class="name">bitcoin_address</div><p>Confirmed + mempool balance (sats and BTC) and transaction counts for any address.</p></div>
           <div class="tool"><div class="name">bitcoin_transaction</div><p>Confirmation status, confirmations, fee, size/weight and I/O counts for a txid.</p></div>
           <div class="tool"><div class="name">bitcoin_block</div><p>Header details by block height or hash: time, tx count, merkle root, difficulty and more.</p></div>
           <div class="tool"><div class="name">verify_merkle_proof</div><p>Offline Bitcoin SPV Merkle inclusion-proof verification, with position-binding hardening.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="try">
+      <div class="wrap">
+        <h2>Try it live</h2>
+        <p class="lead">Call the MCP server right here — the same JSON-RPC endpoint your AI client uses.</p>
+        <div class="connect" style="max-width:none; margin-top:0">
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center">
+            <select id="tryTool" onchange="onToolChange()" style="flex:0 0 auto; background:var(--code); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-size:14.5px">
+              <option value="bitcoin_network_status">bitcoin_network_status</option>
+              <option value="bitcoin_price">bitcoin_price</option>
+              <option value="bitcoin_fee_estimates">bitcoin_fee_estimates</option>
+              <option value="utexo_project_info">utexo_project_info</option>
+              <option value="bitcoin_address">bitcoin_address</option>
+              <option value="bitcoin_transaction">bitcoin_transaction</option>
+            </select>
+            <input id="tryArg" placeholder="argument" style="display:none; flex:1 1 260px; background:var(--code); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:11px 13px; font-family:ui-monospace,Menlo,monospace; font-size:14px" />
+            <button class="btn primary" onclick="runTool()" id="tryRun">Run tool</button>
+          </div>
+          <pre style="margin:16px 0 0; max-height:360px"><code id="tryOut">// Pick a tool and press "Run tool" — the JSON result appears here.</code></pre>
+          <p class="hint">Runs against <span class="inline">POST /mcp</span> in your browser. Read-only; nothing is stored.</p>
         </div>
       </div>
     </section>
@@ -138,6 +164,54 @@
       var url = document.getElementById('mcpUrl').textContent.trim();
       navigator.clipboard.writeText(url).then(function () { toast('Endpoint URL copied'); },
         function () { toast('Copy failed — select and copy manually'); });
+    }
+
+    var ARG_TOOLS = {
+      bitcoin_address: { key: 'address', placeholder: 'Bitcoin address (e.g. bc1q…)' },
+      bitcoin_transaction: { key: 'txid', placeholder: 'Transaction id (64 hex chars)' }
+    };
+    function onToolChange() {
+      var tool = document.getElementById('tryTool').value;
+      var arg = document.getElementById('tryArg');
+      if (ARG_TOOLS[tool]) { arg.style.display = ''; arg.placeholder = ARG_TOOLS[tool].placeholder; }
+      else { arg.style.display = 'none'; arg.value = ''; }
+    }
+    function parseMcp(text) {
+      // Response may be plain JSON or SSE ("data: {…}"). Grab the first JSON object.
+      var lines = text.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var l = lines[i].trim();
+        if (l.indexOf('data:') === 0) l = l.slice(5).trim();
+        if (l.charAt(0) === '{') { try { return JSON.parse(l); } catch (e) {} }
+      }
+      try { return JSON.parse(text); } catch (e) { return null; }
+    }
+    async function runTool() {
+      var tool = document.getElementById('tryTool').value;
+      var out = document.getElementById('tryOut');
+      var btn = document.getElementById('tryRun');
+      var args = {};
+      if (ARG_TOOLS[tool]) {
+        var v = document.getElementById('tryArg').value.trim();
+        if (!v) { out.textContent = 'Please enter a ' + ARG_TOOLS[tool].key + '.'; return; }
+        args[ARG_TOOLS[tool].key] = v;
+      }
+      btn.disabled = true; out.textContent = 'Running ' + tool + '…';
+      try {
+        var res = await fetch('/mcp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: tool, arguments: args } })
+        });
+        var data = parseMcp(await res.text());
+        if (data && data.result && data.result.content) out.textContent = data.result.content[0].text;
+        else if (data && data.error) out.textContent = 'Error: ' + data.error.message;
+        else out.textContent = 'Unexpected response.';
+      } catch (e) {
+        out.textContent = 'Request failed: ' + e.message;
+      } finally {
+        btn.disabled = false;
+      }
     }
   </script>
 </body>

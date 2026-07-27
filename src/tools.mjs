@@ -5,6 +5,8 @@ import {
   addressInfo,
   transactionInfo,
   blockInfo,
+  prices,
+  estimateTransactionFee,
 } from './bitcoin.mjs';
 import { verifyMerkleProof } from './merkle.mjs';
 
@@ -71,6 +73,51 @@ export function registerTools(server) {
     async () => {
       try {
         return ok(await recommendedFees());
+      } catch (e) {
+        return fail(e.message);
+      }
+    }
+  );
+
+  server.registerTool(
+    'bitcoin_price',
+    {
+      title: 'Bitcoin price',
+      description:
+        'Current Bitcoin spot price in major fiat currencies (USD, EUR, GBP, JPY, CAD, CHF, AUD) ' +
+        'from a public mempool.space-compatible price feed.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        return ok(await prices());
+      } catch (e) {
+        return fail(e.message);
+      }
+    }
+  );
+
+  server.registerTool(
+    'estimate_transaction_fee',
+    {
+      title: 'Estimate a Bitcoin transaction fee',
+      description:
+        'Estimate the fee for a Bitcoin transaction using live recommended fee rates. Provide the ' +
+        'transaction virtual size (vbytes) directly, or an input/output count to approximate the ' +
+        'vsize of a native-segwit (P2WPKH) transaction. Returns fee in sats and BTC.',
+      inputSchema: {
+        vbytes: z.number().positive().optional().describe('Transaction virtual size in vBytes (if known).'),
+        inputs: z.number().int().positive().optional().describe('Number of inputs (used to estimate vsize when vbytes is omitted).'),
+        outputs: z.number().int().positive().optional().describe('Number of outputs (used to estimate vsize when vbytes is omitted).'),
+        priority: z
+          .enum(['fastest', 'halfHour', 'hour', 'economy', 'minimum'])
+          .optional()
+          .describe('Confirmation priority (default: halfHour).'),
+      },
+    },
+    async ({ vbytes, inputs, outputs, priority }) => {
+      try {
+        return ok(await estimateTransactionFee({ vbytes, inputs, outputs, priority: priority || 'halfHour' }));
       } catch (e) {
         return fail(e.message);
       }
@@ -171,6 +218,8 @@ export const TOOL_SUMMARIES = [
   ['utexo_project_info', 'Curated overview of the UTEXO Protocol and its components.'],
   ['bitcoin_network_status', 'Chain tip height, fee rates and mempool summary.'],
   ['bitcoin_fee_estimates', 'Recommended sat/vByte fee rates by confirmation target.'],
+  ['bitcoin_price', 'Current BTC spot price in major fiat currencies.'],
+  ['estimate_transaction_fee', 'Estimate a tx fee from vsize (or input/output counts) at live rates.'],
   ['bitcoin_address', 'Balance and tx counts for a Bitcoin address.'],
   ['bitcoin_transaction', 'Status, confirmations, fee and size for a txid.'],
   ['bitcoin_block', 'Header details by block height or hash.'],

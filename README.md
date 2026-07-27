@@ -34,6 +34,8 @@ Claude Desktop config:
 | `utexo_project_info` | Curated overview of the UTEXO Protocol and its building blocks. |
 | `bitcoin_network_status` | Chain tip height, recommended fees and mempool summary. |
 | `bitcoin_fee_estimates` | Recommended sat/vByte fee rates by confirmation target. |
+| `bitcoin_price` | Current BTC spot price in major fiat currencies. |
+| `estimate_transaction_fee` | Estimate a tx fee from vsize (or input/output counts) at live rates. |
 | `bitcoin_address` | Balance (sats/BTC) and tx counts for a Bitcoin address. |
 | `bitcoin_transaction` | Status, confirmations, fee and size for a txid. |
 | `bitcoin_block` | Header details by block height or hash. |

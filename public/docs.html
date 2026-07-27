@@ -130,6 +130,19 @@ curl -s https://mcp.gogettest.online/mcp \
         <h3>bitcoin_fee_estimates</h3>
         <p>Recommended fee rates in sat/vByte for fastest, half-hour, hour, economy and minimum targets. No parameters.</p>
 
+        <h3>bitcoin_price</h3>
+        <p>Current Bitcoin spot price in major fiat currencies (USD, EUR, GBP, JPY, CAD, CHF, AUD). No parameters.</p>
+
+        <h3>estimate_transaction_fee</h3>
+        <table>
+          <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+          <tr><td>vbytes</td><td>number (optional)</td><td>Transaction virtual size in vBytes, if known.</td></tr>
+          <tr><td>inputs</td><td>integer (optional)</td><td>Number of inputs — used with <span class="inline">outputs</span> to approximate vsize when <span class="inline">vbytes</span> is omitted.</td></tr>
+          <tr><td>outputs</td><td>integer (optional)</td><td>Number of outputs.</td></tr>
+          <tr><td>priority</td><td>enum (optional)</td><td>fastest | halfHour | hour | economy | minimum (default halfHour).</td></tr>
+        </table>
+        <p>Returns the chosen fee rate, vsize used and the total fee in sats and BTC, using live recommended rates.</p>
+
         <h3>bitcoin_address</h3>
         <table>
           <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
