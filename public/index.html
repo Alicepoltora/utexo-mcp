@@ -37,6 +37,14 @@
           <a class="btn ghost" href="/docs">Read the docs</a>
         </div>
 
+        <div class="client-chips" id="heroChips">
+          <span class="chips-label" id="chipsLabel">Jump to your client:</span>
+          <button class="chip" data-c="claude"  onclick="openClient('claude')">Claude</button>
+          <button class="chip" data-c="cursor"  onclick="openClient('cursor')">Cursor</button>
+          <button class="chip" data-c="vscode"  onclick="openClient('vscode')">VS&nbsp;Code</button>
+          <button class="chip" data-c="desktop" onclick="openClient('desktop')">Claude&nbsp;Desktop</button>
+        </div>
+
         <div class="connect" id="connect">
           <h3>MCP endpoint URL</h3>
           <div class="url-box">
@@ -200,6 +208,22 @@
       if (os === 'linux') return '~/.config/Claude/claude_desktop_config.json';
       return '~/Library/Application Support/Claude/claude_desktop_config.json';
     }
+    // Best-effort detection of the AI client the visitor is browsing from.
+    // Cursor and VS Code embed Chromium webviews whose UA carries a tell.
+    function detectClient() {
+      var ua = navigator.userAgent || '';
+      if (/cursor/i.test(ua)) return 'cursor';
+      if (/vscode/i.test(ua) || /\bCode\/\d/.test(ua)) return 'vscode';
+      return null;
+    }
+    var CLIENT_NICE = { claude: 'Claude', cursor: 'Cursor', vscode: 'VS Code', desktop: 'Claude Desktop', other: 'your client' };
+
+    function openClient(id) {
+      var target = document.getElementById('connect');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      selectClient(id);
+    }
+
     var REMOTE_CFG =
       '{\n  "mcpServers": {\n    "utexo": {\n      "command": "npx",\n      "args": ["-y", "mcp-remote", "https://mcp.gogettest.online/mcp"]\n    }\n  }\n}';
     var CURSOR_CFG = '{\n  "mcpServers": {\n    "utexo": { "url": "https://mcp.gogettest.online/mcp" }\n  }\n}';
@@ -285,18 +309,34 @@
     }
     function initConnect() {
       CURRENT_OS = detectOS();
-      var note = document.getElementById('osNote');
-      if (note) {
-        note.innerHTML = CURRENT_OS === 'unknown'
-          ? 'Pick your client below — one click or copy-paste.'
-          : 'Detected <b>' + OS_LABEL[CURRENT_OS] + '</b>. Pick your client below — instructions are tailored to your setup.';
-      }
+      var client = detectClient();
+
       var tabs = document.getElementById('clientTabs');
       tabs.innerHTML = CLIENT_ORDER.map(function (id) {
         return '<div class="tab" data-c="' + id + '" onclick="selectClient(\'' + id + '\')">' +
           CLIENTS[id].label + (CLIENTS[id].rec ? '<span class="rec">recommended</span>' : '') + '</div>';
       }).join('');
-      selectClient('claude');
+
+      var note = document.getElementById('osNote');
+      if (client) {
+        // Highlight the matching hero chip and mark it as "you're here".
+        var chip = document.querySelector('#heroChips .chip[data-c="' + client + '"]');
+        if (chip && !chip.querySelector('.you')) {
+          chip.classList.add('detected');
+          chip.insertAdjacentHTML('beforeend', ' <span class="you">you’re here</span>');
+        }
+        var lbl = document.getElementById('chipsLabel');
+        if (lbl) lbl.textContent = 'Looks like ' + CLIENT_NICE[client] + ' — one click:';
+        if (note) note.innerHTML = 'Detected <b>' + CLIENT_NICE[client] + '</b> on <b>' + OS_LABEL[CURRENT_OS] + '</b>. The right steps are open below.';
+        selectClient(client);
+      } else {
+        if (note) {
+          note.innerHTML = CURRENT_OS === 'unknown'
+            ? 'Pick your client below — one click or copy-paste.'
+            : 'Detected <b>' + OS_LABEL[CURRENT_OS] + '</b>. Pick your client below — instructions are tailored to your setup.';
+        }
+        selectClient('claude');
+      }
     }
 
     async function runTool() {

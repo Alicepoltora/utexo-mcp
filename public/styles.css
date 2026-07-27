@@ -63,6 +63,20 @@ header.nav {
 .btn.ghost { background: transparent; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 
+/* Hero client chips */
+.client-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin-top: 20px; }
+.client-chips .chips-label { color: var(--muted); font-size: 13.5px; margin-right: 4px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--panel); color: var(--text);
+  padding: 7px 13px; border-radius: 999px; font-size: 14px; font-weight: 600;
+  transition: transform .06s ease, border-color .2s ease;
+}
+.chip:hover { transform: translateY(-1px); border-color: #35405a; }
+.chip .ico { width: 15px; height: 15px; display: inline-block; }
+.chip.detected { border-color: var(--accent); background: #1c1710; color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.chip .you { font-size: 11px; color: var(--good); font-weight: 700; }
+
 /* Connect card */
 .connect {
   margin: 30px auto 0; max-width: 760px;
